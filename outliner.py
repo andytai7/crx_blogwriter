@@ -2,12 +2,37 @@ import os
 import time
 
 import tiktoken
-from langchain.chat_models import ollama
+from langchain.chat_models import Ollama
 from langchain.prompts.chat import (ChatPromptTemplate,
                                     HumanMessagePromptTemplate,
                                     SystemMessagePromptTemplate)
 from langchain.text_splitter import MarkdownTextSplitter
 
+class ChatOllama:
+    def __init__(self, model_name="llama3-70b", temperature=0.7):
+        self.ollama = Ollama(model=model_name, temperature=temperature)
+        self.conversation_history = []
+
+    def add_to_history(self, message: str):
+        """Adds a message to the conversation history."""
+        self.conversation_history.append(message)
+
+    def format_prompt(self):
+        """Formats the current conversation history into a single prompt."""
+        return " ".join(self.conversation_history)
+
+    def generate_response(self, user_input):
+        """Generates a response from the model based on user input and current context."""
+        self.add_to_history(f"User: {user_input}")
+        prompt = self.format_prompt()
+        try:
+            response = self.ollama._generate([prompt])
+            generated_text = response.generations[0][0].text
+            self.add_to_history(f"Bot: {generated_text}")
+            return generated_text
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return "Sorry, I couldn't generate a response."
 
 class Outliner:
     def __init__(self, input_filename=None) -> None:
@@ -33,11 +58,7 @@ class Outliner:
         with open(transcript_file_path, "r", encoding="utf-8") as f:
             self.raw_transcript = f.read()
 
-        self.chat = ChatOpenAI(
-            openai_api_key=os.environ.get("OPENAI_API_KEY"),
-            temperature=0,
-            model="gpt-3.5-turbo",
-        )
+        self.chat = ChatOllama(model_name="llama3-70b", temperature=0.7)
 
     def num_tokens_from_string(
         self, string: str, encoding_name="cl100k_base"
