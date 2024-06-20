@@ -2,12 +2,37 @@ import os
 import time
 
 import tiktoken
-from langchain.chat_models import ollama
+from langchain.chat_models import Ollama
 from langchain.prompts.chat import (ChatPromptTemplate,
                                     HumanMessagePromptTemplate,
                                     SystemMessagePromptTemplate)
 from langchain.text_splitter import MarkdownTextSplitter
 
+class ChatOllama:
+    def __init__(self, model_name="llama3-70b", temperature=0.7):
+        self.ollama = Ollama(model=model_name, temperature=temperature)
+        self.conversation_history = []
+
+    def add_to_history(self, message: str):
+        """Adds a message to the conversation history."""
+        self.conversation_history.append(message)
+
+    def format_prompt(self):
+        """Formats the current conversation history into a single prompt."""
+        return " ".join(self.conversation_history)
+
+    def generate_response(self, user_input):
+        """Generates a response from the model based on user input and current context."""
+        self.add_to_history(f"User: {user_input}")
+        prompt = self.format_prompt()
+        try:
+            response = self.ollama._generate([prompt])
+            generated_text = response.generations[0][0].text
+            self.add_to_history(f"Bot: {generated_text}")
+            return generated_text
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return "Sorry, I couldn't generate a response."
 
 class Outliner:
     def __init__(self, input_filename=None) -> None:
@@ -33,11 +58,7 @@ class Outliner:
         with open(transcript_file_path, "r", encoding="utf-8") as f:
             self.raw_transcript = f.read()
 
-        self.chat = ChatOpenAI(
-            openai_api_key=os.environ.get("OPENAI_API_KEY"),
-            temperature=0,
-            model="gpt-3.5-turbo",
-        )
+        self.chat = ChatOllama(model_name="llama3-70b", temperature=0.7)
 
     def num_tokens_from_string(
         self, string: str, encoding_name="cl100k_base"
@@ -102,14 +123,17 @@ class Outliner:
             system_template
         )
 
-        human_template = """Organize the following list of statements (delimited in triple backticks) to create the outline \
-            for a blog post in JSON format. The highest level is the most plausible statement as the overarching thesis \
-            statement of the post, the next layers are statements providing supporting arguments for the thesis statement. \
-            The last layer are pieces of evidence for each of the supporting arguments, directly quoted from the provided \
-            list of statements. Use as many of the provided statements as possible. Keep their wording as is without paraphrasing them. \
-            Retain as many technical details as possible. The thesis statement, supporting arguments, and evidences must be \
-            full sentences containing claims. Label each layer with the appropriate level title and create the desired JSON output format below. \
-            Only output the JSON and skip explaining what you're doing:
+        human_template = """Organize the provided key insights into a structured JSON outline for a blog post. Follow these steps:
+
+        1. Identify and number each key insight.
+        2. Cluster similar insights into groups, with each group containing 3-5 insights related to a specific topic.
+        3. Combine these topics into higher-level themes, each consisting of 3-5 related topics.
+        4. Structure these themes in a logical order, with the most overarching theme at the top as the thesis statement of the blog post.
+        5. Within each theme, list the topics as supporting arguments, and under each topic, list the corresponding insights as pieces of evidence.
+        6. Ensure all insights are kept as full sentences with their original wording and retain technical details.
+        7. Label each layer appropriately as 'Thesis Statement', 'Supporting Arguments', and 'Evidence'.
+
+        The output should be in JSON format, focusing solely on organizing the information hierarchically without additional explanations:
 
             Desired output format:
             {{
