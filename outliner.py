@@ -123,14 +123,17 @@ class Outliner:
             system_template
         )
 
-        human_template = """Organize the following list of statements (delimited in triple backticks) to create the outline \
-            for a blog post in JSON format. The highest level is the most plausible statement as the overarching thesis \
-            statement of the post, the next layers are statements providing supporting arguments for the thesis statement. \
-            The last layer are pieces of evidence for each of the supporting arguments, directly quoted from the provided \
-            list of statements. Use as many of the provided statements as possible. Keep their wording as is without paraphrasing them. \
-            Retain as many technical details as possible. The thesis statement, supporting arguments, and evidences must be \
-            full sentences containing claims. Label each layer with the appropriate level title and create the desired JSON output format below. \
-            Only output the JSON and skip explaining what you're doing:
+        human_template = """Organize the provided key insights into a structured JSON outline for a blog post. Follow these steps:
+
+        1. Identify and number each key insight.
+        2. Cluster similar insights into groups, with each group containing 3-5 insights related to a specific topic.
+        3. Combine these topics into higher-level themes, each consisting of 3-5 related topics.
+        4. Structure these themes in a logical order, with the most overarching theme at the top as the thesis statement of the blog post.
+        5. Within each theme, list the topics as supporting arguments, and under each topic, list the corresponding insights as pieces of evidence.
+        6. Ensure all insights are kept as full sentences with their original wording and retain technical details.
+        7. Label each layer appropriately as 'Thesis Statement', 'Supporting Arguments', and 'Evidence'.
+
+        The output should be in JSON format, focusing solely on organizing the information hierarchically without additional explanations:
 
             Desired output format:
             {{

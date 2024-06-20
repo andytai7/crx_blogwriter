@@ -7,8 +7,8 @@ agent_config: # For the demo, default configuration is used. You can change the 
 
 
 llm:  # Configuration for the llm, here we are using the OpenAI GPT-3.5-turbo model
-    _target_: langchain.llms.ollama
-    model_name: llama3-70B
+    _target_: langchain.chat_models.ChatOpenAI
+    model_name: gpt-4o
     temperature: 0
 
 embedding_func:
